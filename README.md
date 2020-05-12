@@ -1,1 +1,1 @@
-Example: https://inspiring-kilby-154c4e.netlify.app
+Example: https://elastic-wilson-700eed.netlify.app

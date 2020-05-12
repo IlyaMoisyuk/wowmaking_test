@@ -1,5 +1,5 @@
 import React from 'react';
-import { GithubPicker  } from 'react-color';
+import { GithubPicker } from 'react-color';
 
 export default class Canvas extends React.Component {
 
@@ -17,28 +17,23 @@ export default class Canvas extends React.Component {
   events
 
 
-  componentDidMount(){
+  componentDidMount() {
     this.ctx = this.canvas.current.getContext('2d');
     this.events = {
-      pen: mousePaint(this.ctx, this.state.colorMouse, this.state.weight),
-      clear: mouseClear(this.ctx),
-      allClear: clearCanvas(this.ctx)
+      pen: this.mousePaint(),
+      clear: this.mouseClear(),
+      allClear: this.mouseAllClear()
     }
   }
 
   componentDidUpdate(prevProps, prevState) {
 
     if (this.props.even !== this.state.event) {
-      this.setState({event: this.props.even})
+      this.setState({ event: this.props.even })
       this.updateCanvas(this.state.event);
     }
 
-    if(prevState.weight == this.state.weight || prevState.colorMouse == this.state.colorMouse){
-      this.events = {
-        pen: mousePaint(this.ctx, this.state.colorMouse, this.state.weight),
-        clear: mouseClear(this.ctx),
-        allClear: clearCanvas(this.ctx)
-      }
+    if (prevState.weight == this.state.weight || prevState.colorMouse == this.state.colorMouse) {
       this.updateCanvas(this.state.event);
 
     }
@@ -46,33 +41,17 @@ export default class Canvas extends React.Component {
   }
 
   updateCanvas = (data) => {
-
-    let color = this.state.colorMouse;
-    let weight = this.state.weight;
-
-
-
-    if(this.props.even == 'allClear'){
-      this.events.allClear();
-      return;
-    }
-
-    let mouseDown
-    this.canvas.current.addEventListener('mousedown', mouseDown = (e) => {
-
-      if(this.state.colorMouse == color && this.state.weight == weight){
+    for (let key in this.events) {
+      if (key == this.state.event && this.state.event !== 'allClear') {
         this.canvas.current.addEventListener('mousemove', this.events[this.state.event]);
-        this.canvas.current.addEventListener('mouseup', () => {
-          this.canvas.current.removeEventListener('mousemove', this.events[this.state.event]);
-        })  
-      }else{
-        this.canvas.current.removeEventListener('mousedown', mouseDown);
-        
+      } else if (this.state.event == 'allClear') {
+        this.events[this.state.event]()
+      } else {
+        this.canvas.current.removeEventListener('mousemove', this.events[key]);
       }
-
-    })
+    }
   }
-  
+
 
 
 
@@ -88,47 +67,62 @@ export default class Canvas extends React.Component {
 
 
   render() {
-    return(
+    return (
       <>
         <canvas style={this.canvasCss} width={this.canvasCss.width} height={this.canvasCss.height} ref={this.canvas}></canvas>
         {this.state.event == 'pen' ?
           <div className="hideMenu">
-            <GithubPicker onChangeComplete={(color) => this.changeColor(color) }/> 
-            <div class="weightReact">
+            <GithubPicker onChangeComplete={(color) => this.changeColor(color)} />
+            <div className="weightReact">
               <span onClick={() => this.changeWeight(3)}></span>
               <span onClick={() => this.changeWeight(10)}></span>
               <span onClick={() => this.changeWeight(20)}></span>
-            </div> 
+            </div>
           </div>
-        : ""} 
+          : ""}
       </>
     );
   }
 
   changeWeight = (width) => {
-    this.setState({weight: width});
+    this.ctx.lineWidth = width;
   }
 
 
   changeColor = (color) => {
-    this.setState({colorMouse: color.hex});
+    this.ctx.strokeStyle = color.hex;
+  }
+
+  mousePaint = () => (e) => {
+    var x = e.offsetX;
+    var y = e.offsetY;
+    var dx = e.movementX;
+    var dy = e.movementY;
+
+    if (e.buttons > 0) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(x, y);
+      this.ctx.lineTo(x - dx, y - dy);
+      this.ctx.stroke();
+      this.ctx.closePath();
+    }
+
+  }
+
+  mouseClear = () => (e) => {
+    if (e.buttons > 0) {
+      this.ctx.clearRect(e.offsetX, e.offsetY, 20, 20);
+    }
+  }
+
+  mouseAllClear = () => (e) => {
+    console.log(this.canvas.offsetWidth)
+    this.ctx.clearRect(0, 0, this.canvas.current.offsetWidth, this.canvas.current.offsetHeight);
+
   }
 
 
 }
 
 
-let mousePaint = (context, color, weight) => (e) => {
-  context.fillStyle = color;
-  context.fillRect(e.offsetX, e.offsetY, weight, weight)  
 
-}
-
-let mouseClear = (context) => (e) => {
-  context.clearRect(e.offsetX, e.offsetY, 20, 20)  
-
-}
-
-let clearCanvas = (context) => (e) => {
-  context.clearRect(0, 0, window.innerWidth * 0.9, window.innerHeight);
-}
